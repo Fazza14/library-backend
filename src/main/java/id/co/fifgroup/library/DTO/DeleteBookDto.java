@@ -9,12 +9,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateBookDTO {
-
+public class DeleteBookDto {
     private Long idBook;
     private String title;
     private String author;
-
     private Long idStock;
     private Integer stock;
 }

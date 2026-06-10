@@ -5,9 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import id.co.fifgroup.library.service.BookStockService;
 import id.co.fifgroup.library.service.BookService;
-import id.co.fifgroup.library.DTO.BookStockDTO;
+import id.co.fifgroup.library.DTO.BookStockDto;
 import java.util.List;
-import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/book-stocks")
@@ -21,28 +20,12 @@ public class BookStockController {
     private BookService bookService;
 
     @GetMapping
-    public ResponseEntity<List<BookStockDTO>> getAllStocks() {
-        try {
-            List<BookStockDTO> stocks = bookService.getAllBooksWithStock();
-            return ResponseEntity.ok(stocks);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Collections.emptyList());
-        }
+    public ResponseEntity<List<BookStockDto>> getAllStocks() {
+        return bookService.getAllBooksWithStock();
     }
 
     @PutMapping("/reduce/{idBook}")
     public ResponseEntity<?> reduceStock(@PathVariable Long idBook) {
-        try {
-            boolean isReduced = bookStockService.reduceBookStock(idBook);
-            if (isReduced) {
-                return ResponseEntity.ok().body("{\"message\": \"Stok berhasil dikurangi\"}");
-            } else {
-                return ResponseEntity.badRequest().body("{\"message\": \"Stok habis atau buku tidak ditemukan\"}");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("{\"message\": \"Terjadi kesalahan di server\"}");
-        }
+        return bookStockService.reduceBookStock(idBook);
     }
 }
