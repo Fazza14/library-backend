@@ -24,13 +24,14 @@ public class BookStockTest {
     }
 
     @Test
-    @DisplayName("Tambah Stok - sukses")
-    void updateStock_Increase_Success() {
+    void reduceBookStock() {
         Long bookId = 2L;
 
         BookStock mockStock = new BookStock();
         mockStock.setId(bookId);
         mockStock.setStock(50);
+
+
 
 
     }
