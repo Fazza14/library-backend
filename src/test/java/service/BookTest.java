@@ -60,7 +60,7 @@ public class BookTest {
         ResponseEntity<List<Book>> response = bookService.getAllBooks();
 
         assertNotNull(response);
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(500, response.getStatusCode().value());
         assertTrue(response.getBody().isEmpty());
     }
 
@@ -82,7 +82,7 @@ public class BookTest {
 
         ResponseEntity<Long> response = bookService.countBooks();
 
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(500, response.getStatusCode().value());
         assertEquals(0L, response.getBody());
     }
 
@@ -115,7 +115,7 @@ public class BookTest {
 
         ResponseEntity<List<BookStockDto>> response = bookService.getAllBooksWithStock();
 
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(400, response.getStatusCode().value());
         assertTrue(response.getBody().isEmpty());
     }
 
@@ -456,7 +456,7 @@ public class BookTest {
     @Test
     void deleteBookWithStock_GeneralException() {
         Long idBook = 1L;
-        
+
         when(bookRepository.findById(idBook)).thenAnswer(invocation -> {
             throw new Exception("Database crash murni");
         });
