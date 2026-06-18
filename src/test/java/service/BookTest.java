@@ -221,7 +221,6 @@ public class BookTest {
         CreateBookDto request = new CreateBookDto();
         request.setIdBook(1L);
 
-        // Dipaksa melempar Exception murni lewat thenAnswer agar masuk ke status 500
         when(bookRepository.existsById(anyLong())).thenAnswer(invocation -> {
             throw new Exception("Database crash murni");
         });
@@ -302,8 +301,7 @@ public class BookTest {
         UpdateBookDto request = new UpdateBookDto();
         request.setIdBook(1L);
 
-        // Menggunakan thenAnswer untuk bypass checked exception di Mockito dan tembus catch(Exception e)
-        when(bookRepository.findById(anyLong())).thenAnswer(invocation -> {
+       when(bookRepository.findById(anyLong())).thenAnswer(invocation -> {
             throw new Exception("Database crash murni");
         });
 

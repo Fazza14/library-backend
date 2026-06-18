@@ -74,7 +74,7 @@ public class BookControllerTest {
     }
 
     @Test
-    void countBooks_Success() throws Exception { // Ditambahkan 'throws Exception'
+    void countBooks_Success() throws Exception {
 
         ResponseEntity<Long> responseEntity = new ResponseEntity<>(10L, HttpStatus.OK);
 
@@ -114,7 +114,7 @@ public class BookControllerTest {
 
        mockMvc.perform(put("/api/books")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))) // Sekarang aman digunakan
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
         verify(bookService, times(1)).updateBookWithStock(any(UpdateBookDto.class));
