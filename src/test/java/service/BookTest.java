@@ -221,11 +221,15 @@ public class BookTest {
         CreateBookDto request = new CreateBookDto();
         request.setIdBook(1L);
 
-        when(bookRepository.existsById(1L)).thenThrow(new RuntimeException("Crash"));
+        // Dipaksa melempar Exception murni lewat thenAnswer agar masuk ke status 500
+        when(bookRepository.existsById(anyLong())).thenAnswer(invocation -> {
+            throw new Exception("Database crash murni");
+        });
 
         ResponseEntity<?> response = bookService.createBookWithStock(request);
 
         assertEquals(500, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Terjadi kesalahan pada server"));
     }
 
 
@@ -282,7 +286,7 @@ public class BookTest {
     }
 
     @Test
-    void updateBookWithStock_GeneralException() {
+    void updateBookWithStock_RuntimeException_General() {
         UpdateBookDto request = new UpdateBookDto();
         request.setIdBook(1L);
 
@@ -290,7 +294,24 @@ public class BookTest {
 
         ResponseEntity<?> response = bookService.updateBookWithStock(request);
 
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    void updateBookWithStock_GeneralException_ReturnsInternalServerError() {
+        UpdateBookDto request = new UpdateBookDto();
+        request.setIdBook(1L);
+
+        // Menggunakan thenAnswer untuk bypass checked exception di Mockito dan tembus catch(Exception e)
+        when(bookRepository.findById(anyLong())).thenAnswer(invocation -> {
+            throw new Exception("Database crash murni");
+        });
+
+        ResponseEntity<?> response = bookService.updateBookWithStock(request);
+
+        assertNotNull(response);
         assertEquals(500, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Terjadi kesalahan pada server"));
     }
 
 
@@ -362,7 +383,10 @@ public class BookTest {
     @Test
     void getBookDetailForDelete_GeneralException() {
         Long idBook = 1L;
-        when(bookRepository.findById(idBook)).thenThrow(new RuntimeException("Crash"));
+
+        when(bookRepository.findById(idBook)).thenAnswer(invocation -> {
+            throw new Exception("Database crash murni");
+        });
 
         ResponseEntity<?> response = bookService.getBookDetailForDelete(idBook);
 
@@ -432,7 +456,10 @@ public class BookTest {
     @Test
     void deleteBookWithStock_GeneralException() {
         Long idBook = 1L;
-        when(bookRepository.findById(idBook)).thenThrow(new RuntimeException("Crash"));
+        
+        when(bookRepository.findById(idBook)).thenAnswer(invocation -> {
+            throw new Exception("Database crash murni");
+        });
 
         ResponseEntity<?> response = bookService.deleteBookWithStock(idBook);
 
