@@ -21,7 +21,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class BookServiceTest {
+public class BookTest {
 
     @Mock
     private BookRepository bookRepository;
@@ -54,7 +54,6 @@ public class BookServiceTest {
 
     @Test
     void getAllBooks_Exception() {
-
         when(bookRepository.findAll()).thenThrow(new RuntimeException("Database Error"));
 
         ResponseEntity<List<Book>> response = bookService.getAllBooks();
@@ -76,6 +75,18 @@ public class BookServiceTest {
         assertEquals(5L, response.getBody());
         verify(bookRepository, times(1)).count();
     }
+
+
+    @Test
+    void countBooks_Exception() {
+        when(bookRepository.count()).thenThrow(new RuntimeException("Database Error"));
+
+        ResponseEntity<Long> response = bookService.countBooks();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(0L, response.getBody());
+    }
+
 
     @Test
     void getAllBooksWithStock_Success() {
@@ -99,6 +110,18 @@ public class BookServiceTest {
         assertEquals(1, response.getBody().size());
         assertEquals(15, response.getBody().get(0).getStock());
     }
+
+
+    @Test
+    void getAllBooksWithStock_Exception() {
+        when(bookRepository.findAll()).thenThrow(new RuntimeException("Database Error"));
+
+        ResponseEntity<List<BookStockDto>> response = bookService.getAllBooksWithStock();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().isEmpty());
+    }
+
 
     @Test
     void createBookWithStock_Success() {
@@ -140,6 +163,37 @@ public class BookServiceTest {
         verify(bookRepository, never()).save(any(Book.class));
     }
 
+
+    @Test
+    void createBookWithStock_DuplicateStockId() {
+        CreateBookDto request = new CreateBookDto();
+        request.setIdBook(1L);
+        request.setIdStock(10L);
+
+        when(bookRepository.existsById(1L)).thenReturn(false);
+        when(bookStockRepository.existsById(10L)).thenReturn(true);
+
+        ResponseEntity<?> response = bookService.createBookWithStock(request);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("ID Stok sudah terdaftar!"));
+    }
+
+
+    @Test
+    void createBookWithStock_GeneralException() {
+        CreateBookDto request = new CreateBookDto();
+        request.setIdBook(1L);
+
+        when(bookRepository.existsById(1L)).thenThrow(new RuntimeException("Crash"));
+
+        ResponseEntity<?> response = bookService.createBookWithStock(request);
+
+        assertEquals(500, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Terjadi kesalahan pada server"));
+    }
+
+
     @Test
     void updateBookWithStock_Success() {
         UpdateBookDto request = new UpdateBookDto(1L, "New Title", "New Author", 10L, 50);
@@ -172,6 +226,99 @@ public class BookServiceTest {
         assertTrue(response.getBody().toString().contains("tidak ditemukan!"));
         verify(bookRepository, never()).save(any(Book.class));
     }
+
+
+    @Test
+    void updateBookWithStock_StockNotFound() {
+        UpdateBookDto request = new UpdateBookDto(1L, "New Title", "New Author", 10L, 50);
+        Book existingBook = new Book();
+        existingBook.setId(1L);
+
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(existingBook));
+        when(bookStockRepository.findById(10L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = bookService.updateBookWithStock(request);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Stok dengan ID 10 tidak ditemukan!"));
+    }
+
+
+    @Test
+    void updateBookWithStock_GeneralException() {
+        UpdateBookDto request = new UpdateBookDto(1L, "New Title", "New Author", 10L, 50);
+
+        when(bookRepository.findById(1L)).thenThrow(new RuntimeException("Crash"));
+
+        ResponseEntity<?> response = bookService.updateBookWithStock(request);
+
+        assertEquals(500, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Terjadi kesalahan pada server"));
+    }
+
+
+   @Test
+    void getBookDetailForDelete_Success() {
+        Long idBook = 1L;
+        Book book = new Book();
+        book.setId(idBook);
+        book.setTitle("Title");
+        book.setAuthor("Author");
+
+        BookStock stock = new BookStock();
+        stock.setId(10L);
+        stock.setIdBook(book);
+        stock.setStock(5);
+
+        when(bookRepository.findById(idBook)).thenReturn(Optional.of(book));
+        when(bookStockRepository.findAll()).thenReturn(Arrays.asList(stock));
+
+        ResponseEntity<?> response = bookService.getBookDetailForDelete(idBook);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+    }
+
+
+    @Test
+    void getBookDetailForDelete_BookNotFound() {
+        Long idBook = 1L;
+        when(bookRepository.findById(idBook)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = bookService.getBookDetailForDelete(idBook);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Buku dengan ID 1 tidak ditemukan!"));
+    }
+
+
+    @Test
+    void getBookDetailForDelete_StockNotFound() {
+        Long idBook = 1L;
+        Book book = new Book();
+        book.setId(idBook);
+
+        when(bookRepository.findById(idBook)).thenReturn(Optional.of(book));
+        when(bookStockRepository.findAll()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<?> response = bookService.getBookDetailForDelete(idBook);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("Data stok untuk buku ini tidak ditemukan!"));
+    }
+
+
+    @Test
+    void getBookDetailForDelete_GeneralException() {
+        Long idBook = 1L;
+        when(bookRepository.findById(idBook)).thenThrow(new RuntimeException("Crash"));
+
+        ResponseEntity<?> response = bookService.getBookDetailForDelete(idBook);
+
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+
     @Test
     void deleteBookWithStock_Success() {
         Long idBook = 1L;
@@ -192,4 +339,43 @@ public class BookServiceTest {
         verify(bookRepository, times(1)).delete(existingBook);
     }
 
+
+    @Test
+    void deleteBookWithStock_BookNotFound() {
+        Long idBook = 1L;
+        when(bookRepository.findById(idBook)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = bookService.deleteBookWithStock(idBook);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody().toString().contains("tidak ditemukan!"));
+    }
+
+
+    @Test
+    void deleteBookWithStock_StockAlreadyEmpty_StillDeletesBook() {
+        Long idBook = 1L;
+        Book existingBook = new Book();
+        existingBook.setId(idBook);
+
+        when(bookRepository.findById(idBook)).thenReturn(Optional.of(existingBook));
+        when(bookStockRepository.findAll()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<?> response = bookService.deleteBookWithStock(idBook);
+
+        assertEquals(200, response.getStatusCode().value());
+        verify(bookStockRepository, never()).delete(any(BookStock.class));
+        verify(bookRepository, times(1)).delete(existingBook);
+    }
+
+    
+    @Test
+    void deleteBookWithStock_GeneralException() {
+        Long idBook = 1L;
+        when(bookRepository.findById(idBook)).thenThrow(new RuntimeException("Crash"));
+
+        ResponseEntity<?> response = bookService.deleteBookWithStock(idBook);
+
+        assertEquals(500, response.getStatusCode().value());
+    }
 }
